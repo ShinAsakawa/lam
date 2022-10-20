@@ -510,9 +510,9 @@ class VOCAB():
         #データファイルの保存してあるディレクトリの指定
         ntt_dir = 'ccap'
         psy71_fname = 'psylex71utf8.txt'  # ファイル名
-        #print('# 頻度情報の取得')
-        #print('# psylex71.txt を utf8 に変換したファイルを用いる')
-        with open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
+        psy71_fname = 'psylex71utf8.txt.gz'  # ファイル名
+        #with gzip.open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
+        with gzip.open(os.path.join(ntt_dir,psy71_fname), 'rt', encoding='utf-8') as f:
             ntt71raw = f.readlines()
 
         tmp = [line.split(' ')[:6] for line in ntt71raw]
