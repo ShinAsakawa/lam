@@ -17,7 +17,7 @@ import re
 import random
 import torch
 
-# from tqdm import tqdm         
+# from tqdm import tqdm
 #commandline で実行時
 from tqdm.notebook import tqdm  #jupyter で実行時
 
@@ -40,36 +40,41 @@ def MakeVocabDataset(_dict:dict, vocab=None)->dict:
         orth = vocab.ntt_orth2hira[_x] if _x in vocab.ntt_orth2hira else _x
         _yomi, _phon, _phon_r, _orth, _orth_r, _mora, _mora_r = vocab.get7lists_from_orth(orth)
         phon_ids, phon_ids_r, orth_ids, orth_ids_r, mora_ids, mora_ids_r = vocab.get6ids(_phon, _orth, _yomi)
-        _yomi, _mora1, _mora1_r, _mora, _mora_ids, _mora_p, _mora_p_r, _mora_p_ids, _mora_p_ids_r, _juls = vocab.yomi2mora_transform(_yomi)    
-        _data[i] = {'orig': orth, 'yomi': _yomi, 'ortho':_orth, 'ortho_ids': orth_ids, 
-                    'ortho_r': _orth_r, 'ortho_ids_r': orth_ids_r, 
-                    'phone':_phon, 'phone_ids': phon_ids, 'phone_r': _phon_r, 'phone_ids_r': phon_ids_r, 
-                    'mora': _mora1, 'mora_r': _mora1_r, 'mora_ids': _mora_ids, 'mora_p': _mora_p, 
+        _yomi, _mora1, _mora1_r, _mora, _mora_ids, _mora_p, _mora_p_r, _mora_p_ids, _mora_p_ids_r, _juls = vocab.yomi2mora_transform(_yomi)
+        _data[i] = {'orig': orth, 'yomi': _yomi, 'ortho':_orth, 'ortho_ids': orth_ids,
+                    'ortho_r': _orth_r, 'ortho_ids_r': orth_ids_r,
+                    'phone':_phon, 'phone_ids': phon_ids, 'phone_r': _phon_r, 'phone_ids_r': phon_ids_r,
+                    'mora': _mora1, 'mora_r': _mora1_r, 'mora_ids': _mora_ids, 'mora_p': _mora_p,
                     'mora_p_r': _mora_p_r, 'mora_p_ids': _mora_p_ids, 'mora_p_ids_r': _mora_p_ids_r,
-                   }    
+                   }
 
     return _data
 
 
+def make_ntt_freq_data(
+    ps71_fname:str=None):
 
-def make_ntt_freq_data():
     """NTT日本語語彙特性の頻度情報を読み込んで，頻度辞書と表記から平仮名を返す辞書を返す"""
     print('# NTT日本語語彙特性 (天野，近藤; 1999, 三省堂)より頻度情報を取得')
 
-    #データファイルの保存してあるディレクトリの指定
-    ntt_dir = 'ccap'
-    psy71_fname = 'psylex71utf8.txt'  # ファイル名
-    #print('# 頻度情報の取得')
-    #print('# psylex71.txt を utf8 に変換したファイルを用いる')
-    with open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
-        ntt71raw = f.readlines()
+    if ps71_fname == None:
+        #データファイルの保存してあるディレクトリの指定
+        ntt_dir = 'ccap'
+        psy71_fname = 'psylex71utf8.txt'  # ファイル名
+        #print('# 頻度情報の取得')
+        #print('# psylex71.txt を utf8 に変換したファイルを用いる')
+        with open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
+            ntt71raw = f.readlines()
+    else:
+        with open(ps71_fname, 'r') as f:
+            ntt71raw = f.readlines()
 
     tmp = [line.split(' ')[:6] for line in ntt71raw]
     tmp2 = [[int(line[0]),line[2],line[4],int(line[5]), line[3]] for line in tmp]
     #単語ID(0), 単語，品詞，頻度 だけ取り出す
     ntt_freq = {x[0]-1:{'単語':jaconv.normalize(x[1]),
                         '品詞':x[2],
-                        '頻度':x[3], 
+                        '頻度':x[3],
                         'よみ':jaconv.kata2hira(jaconv.normalize(x[4]))
                         } for x in tmp2}
     #ntt_freq = {x[0]-1:{'単語':x[1],'品詞':x[2],'頻度':x[3], 'よみ':x[4]} for x in tmp2}
@@ -85,6 +90,40 @@ def make_ntt_freq_data():
     # self.ntt_freq には頻度順に単語が並んでいる
     return [ntt_freq[x]['単語']for x in Freq_sorted], ntt_orth2hira
 
+# 2023_0112 旧バージョンの保存。`ps71_fname` の書き換えのため`
+# def make_ntt_freq_data():
+#     """NTT日本語語彙特性の頻度情報を読み込んで，頻度辞書と表記から平仮名を返す辞書を返す"""
+#     print('# NTT日本語語彙特性 (天野，近藤; 1999, 三省堂)より頻度情報を取得')
+
+#     #データファイルの保存してあるディレクトリの指定
+#     ntt_dir = 'ccap'
+#     psy71_fname = 'psylex71utf8.txt'  # ファイル名
+#     #print('# 頻度情報の取得')
+#     #print('# psylex71.txt を utf8 に変換したファイルを用いる')
+#     with open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
+#         ntt71raw = f.readlines()
+
+#     tmp = [line.split(' ')[:6] for line in ntt71raw]
+#     tmp2 = [[int(line[0]),line[2],line[4],int(line[5]), line[3]] for line in tmp]
+#     #単語ID(0), 単語，品詞，頻度 だけ取り出す
+#     ntt_freq = {x[0]-1:{'単語':jaconv.normalize(x[1]),
+#                         '品詞':x[2],
+#                         '頻度':x[3],
+#                         'よみ':jaconv.kata2hira(jaconv.normalize(x[4]))
+#                         } for x in tmp2}
+#     #ntt_freq = {x[0]-1:{'単語':x[1],'品詞':x[2],'頻度':x[3], 'よみ':x[4]} for x in tmp2}
+#     ntt_orth2hira = {ntt_freq[x]['単語']:ntt_freq[x]['よみ'] for x in ntt_freq}
+#     #print(f'#登録総単語数: {len(ntt_freq)}')
+
+#     Freq = np.zeros((len(ntt_freq)), dtype=np.uint)  #ソートに使用する numpy 配列
+#     for i, x in enumerate(ntt_freq):
+#         Freq[i] = ntt_freq[i]['頻度']
+
+#     Freq_sorted = np.argsort(Freq)[::-1]  #頻度降順に並べ替え
+
+#     # self.ntt_freq には頻度順に単語が並んでいる
+#     return [ntt_freq[x]['単語']for x in Freq_sorted], ntt_orth2hira
+
 
 class VOCAB():
     '''
@@ -92,8 +131,8 @@ class VOCAB():
     ただし，検証データに含まれる単語は訓練データとして用いない。
 
     検証データとして，以下のいずれかを考える
-    1. TLPA (藤田 他, 2000, 「失語症語彙検査」の開発，音声言語医学 42, 179-202) 
-    2. SALA 上智大学失語症語彙検査 
+    1. TLPA (藤田 他, 2000, 「失語症語彙検査」の開発，音声言語医学 42, 179-202)
+    2. SALA 上智大学失語症語彙検査
 
     このオブジェクトクラスでは，
     `phone_vocab`, `ortho_vocab`, `ntt_freq`, に加えて，単語の読みについて ntt_orth2hira によって読みを得ることにした。
@@ -130,15 +169,14 @@ class VOCAB():
     'mora_p_ids_r': [31, 35, 6, 5]},
     ```
     '''
-    
-    def __init__(self, 
-                 traindata_size = 10000,
-                 w2v=None,
-                 yomi=None,
-                 #test_name='TLPA',  # or 'SALA'
-                ):
 
-        #isColab = 'google.colab' in str(IPython.get_ipython())
+    def __init__(self,
+                traindata_size = 10000,  # デフォルト語彙数
+                w2v=None,                # word2vec (gensim)
+                yomi=None,               # MeCab を用いた `読み` の取得のため`
+                ps71_fname:str=None,     # NTT 日本語語彙特性の頻度データファイル名
+                #test_name='TLPA',  # or 'SALA',
+                ):
 
         # if w2v != None:
         #     self.w2v = w2v
@@ -160,7 +198,7 @@ class VOCAB():
         #     from ccap.mecab_settings import wakati
         #     self.wakati = wakati
 
-        # 訓練語彙数の上限 `training_size` を設定 
+        # 訓練語彙数の上限 `training_size` を設定
         self.traindata_size = traindata_size
 
         # `self.moraWakachi()` で用いる正規表現のあつまり 各条件を正規表現で表す
@@ -178,7 +216,6 @@ class VOCAB():
         self.re_mora = re.compile(self.cond)
         # 以上 `self.moraWakachi()` で用いる正規表現の定義
 
-
         self.ortho_vocab, self.ortho_freq = ['<PAD>', '<EOW>','<SOW>','<UNK>'], {}
         self.phone_vocab, self.phone_freq = ['<PAD>', '<EOW>','<SOW>','<UNK>'], {}
         self.phone_vocab = ['<PAD>', '<EOW>', '<SOW>', '<UNK>', \
@@ -188,50 +225,50 @@ class VOCAB():
 
         # 全モーラリストを `mora_vocab` として登録
         self.mora_vocab=[
-            '<PAD>', '<EOW>', '<SOW>', '<UNK>', 
-            'ぁ', 'あ', 'ぃ', 'い', 'ぅ', 'う', 'うぃ', 'うぇ', 'うぉ', 'ぇ', 'え', 'お', 
-            'か', 'が', 'き', 'きゃ', 'きゅ', 'きょ', 'ぎ', 'ぎゃ', 'ぎゅ', 'ぎょ', 'く', 'くぁ', 'くぉ', 'ぐ', 'ぐぁ', 'け', 'げ', 'こ', 'ご', 
-            'さ', 'ざ', 'し', 'しぇ', 'しゃ', 'しゅ', 'しょ', 'じ', 'じぇ', 'じゃ', 'じゅ', 'じょ', 'す', 'ず', 'せ', 'ぜ', 'そ', 'ぞ', 
-            'た', 'だ', 'ち', 'ちぇ', 'ちゃ', 'ちゅ', 'ちょ', 'ぢ', 'ぢゃ', 'ぢょ', 'っ', 'つ', 'つぁ', 'つぃ', 'つぇ', 'つぉ', 'づ', 'て', 
-            'てぃ', 'で', 'でぃ', 'でゅ', 'と', 'ど', 
-            'な', 'に', 'にぇ', 'にゃ', 'にゅ', 'にょ', 'ぬ', 'ね', 'の', 
-            'は', 'ば', 'ぱ', 'ひ', 'ひゃ', 'ひゅ', 'ひょ', 'び', 'びゃ', 'びゅ', 'びょ', 'ぴ', 'ぴゃ', 'ぴゅ', 'ぴょ', 
-            'ふ', 'ふぁ', 'ふぃ', 'ふぇ', 'ふぉ', 'ふゅ', 'ぶ', 'ぷ', 'へ', 'べ', 'ぺ', 'ほ', 'ぼ', 'ぽ', 
-            'ま', 'み', 'みゃ', 'みゅ', 'みょ', 'む', 'め', 'も', 
+            '<PAD>', '<EOW>', '<SOW>', '<UNK>',
+            'ぁ', 'あ', 'ぃ', 'い', 'ぅ', 'う', 'うぃ', 'うぇ', 'うぉ', 'ぇ', 'え', 'お',
+            'か', 'が', 'き', 'きゃ', 'きゅ', 'きょ', 'ぎ', 'ぎゃ', 'ぎゅ', 'ぎょ', 'く', 'くぁ', 'くぉ', 'ぐ', 'ぐぁ', 'け', 'げ', 'こ', 'ご',
+            'さ', 'ざ', 'し', 'しぇ', 'しゃ', 'しゅ', 'しょ', 'じ', 'じぇ', 'じゃ', 'じゅ', 'じょ', 'す', 'ず', 'せ', 'ぜ', 'そ', 'ぞ',
+            'た', 'だ', 'ち', 'ちぇ', 'ちゃ', 'ちゅ', 'ちょ', 'ぢ', 'ぢゃ', 'ぢょ', 'っ', 'つ', 'つぁ', 'つぃ', 'つぇ', 'つぉ', 'づ', 'て',
+            'てぃ', 'で', 'でぃ', 'でゅ', 'と', 'ど',
+            'な', 'に', 'にぇ', 'にゃ', 'にゅ', 'にょ', 'ぬ', 'ね', 'の',
+            'は', 'ば', 'ぱ', 'ひ', 'ひゃ', 'ひゅ', 'ひょ', 'び', 'びゃ', 'びゅ', 'びょ', 'ぴ', 'ぴゃ', 'ぴゅ', 'ぴょ',
+            'ふ', 'ふぁ', 'ふぃ', 'ふぇ', 'ふぉ', 'ふゅ', 'ぶ', 'ぷ', 'へ', 'べ', 'ぺ', 'ほ', 'ぼ', 'ぽ',
+            'ま', 'み', 'みゃ', 'みゅ', 'みょ', 'む', 'め', 'も',
             'や', 'ゆ', 'よ', 'ら', 'り', 'りゃ', 'りゅ', 'りょ', 'る', 'れ', 'ろ', 'ゎ', 'わ', 'ゐ', 'ゑ', 'を', 'ん', 'ー',
             # 2022_1017 added
             'ずぃ', 'ぶぇ', 'ぶぃ', 'ぶぁ', 'ゅ', 'ぶぉ', 'いぇ', 'ぉ', 'くぃ', 'ひぇ', 'くぇ', 'ぢゅ', 'りぇ',
         ]
 
         # モーラから音への変換表を表す辞書を `mora2jul` として登録
-        self.mora2jul={'ぁ': ['a'], 'あ': ['a'], 'ぃ': ['i'], 'い': ['i'], 'ぅ': ['u'], 'う': ['u'], 
-                       'うぃ': ['w', 'i'], 'うぇ': ['w', 'e'], 'うぉ': ['w', 'o'], 'ぇ': ['e'], 
-                       'え': ['e'], 'お': ['o'], 'か': ['k', 'a'], 'が': ['g', 'a'], 'き': ['k', 'i'], 
-                       'きゃ': ['ky', 'a'], 'きゅ': ['ky', 'u'], 'きょ': ['ky', 'o'], 'ぎ': ['g', 'i'], 
-                       'ぎゃ': ['gy', 'a'], 'ぎゅ': ['gy', 'u'], 'ぎょ': ['gy', 'o'], 'く': ['k', 'u'], 
-                       'くぁ': ['k', 'u', 'a'], 'くぉ': ['k', 'u', 'o'], 'ぐ': ['g', 'u'], 'ぐぁ': ['g', 'u', 'a'], 
-                       'け': ['k', 'e'], 'げ': ['g', 'e'], 'こ': ['k', 'o'], 'ご': ['g', 'o'], 'さ': ['s', 'a'], 
-                       'ざ': ['z', 'a'], 'し': ['sh', 'i'], 'しぇ': ['sh', 'e'], 'しゃ': ['sh', 'a'], 
-                       'しゅ': ['sh', 'u'], 'しょ': ['sh', 'o'], 'じ': ['j', 'i'], 'じぇ': ['j', 'e'], 
-                       'じゃ': ['j', 'a'], 'じゅ': ['j', 'u'], 'じょ': ['j', 'o'], 'す': ['s', 'u'], 
-                       'ず': ['z', 'u'], 'せ': ['s', 'e'], 'ぜ': ['z', 'e'], 'そ': ['s', 'o'], 'ぞ': ['z', 'o'], 
-                       'た': ['t', 'a'], 'だ': ['d', 'a'], 'ち': ['ch', 'i'], 'ちぇ': ['ch', 'e'], 
-                       'ちゃ': ['ch', 'a'], 'ちゅ': ['ch', 'u'], 'ちょ': ['ch', 'o'], 'ぢ': ['j', 'i'], 
-                       'ぢゃ': ['j', 'a'], 'ぢょ': ['j', 'o'], 'っ': ['q'], 'つ': ['ts', 'u'], 'つぁ': ['ts', 'a'], 
-                       'つぃ': ['ts', 'i'], 'つぇ': ['ts', 'e'], 'つぉ': ['ts', 'o'], 'づ': ['z', 'u'], 'て': ['t', 'e'], 
-                       'てぃ': ['t', 'i'], 'で': ['d', 'e'], 'でぃ': ['d', 'i'], 'でゅ': ['dy', 'u'], 'と': ['t', 'o'], 
-                       'ど': ['d', 'o'], 'な': ['n', 'a'], 'に': ['n', 'i'], 'にぇ': ['n', 'i', 'e'], 'にゃ': ['ny', 'a'], 
-                       'にゅ': ['ny', 'u'], 'にょ': ['ny', 'o'], 'ぬ': ['n', 'u'], 'ね': ['n', 'e'], 'の': ['n', 'o'], 
-                       'は': ['h', 'a'], 'ば': ['b', 'a'], 'ぱ': ['p', 'a'], 'ひ': ['h', 'i'], 'ひゃ': ['hy', 'a'], 
-                       'ひゅ': ['hy', 'u'], 'ひょ': ['hy', 'o'], 'び': ['b', 'i'], 'びゃ': ['by', 'a'], 'びゅ': ['by', 'u'], 
-                       'びょ': ['by', 'o'], 'ぴ': ['p', 'i'], 'ぴゃ': ['py', 'a'], 'ぴゅ': ['py', 'u'], 'ぴょ': ['py', 'o'], 
-                       'ふ': ['f', 'u'], 'ふぁ': ['f', 'a'], 'ふぃ': ['f', 'i'], 'ふぇ': ['f', 'e'], 'ふぉ': ['f', 'o'], 
-                       'ふゅ': ['hy', 'u'], 'ぶ': ['b', 'u'], 'ぷ': ['p', 'u'], 'へ': ['h', 'e'], 'べ': ['b', 'e'], 
-                       'ぺ': ['p', 'e'], 'ほ': ['h', 'o'], 'ぼ': ['b', 'o'], 'ぽ': ['p', 'o'], 'ま': ['m', 'a'], 
-                       'み': ['m', 'i'], 'みゃ': ['my', 'a'], 'みゅ': ['my', 'u'], 'みょ': ['my', 'o'], 'む': ['m', 'u'], 
-                       'め': ['m', 'e'], 'も': ['m', 'o'], 'や': ['y', 'a'], 'ゆ': ['y', 'u'], 'よ': ['y', 'o'], 
-                       'ら': ['r', 'a'], 'り': ['r', 'i'], 'りゃ': ['ry', 'a'], 'りゅ': ['ry', 'u'], 'りょ': ['ry', 'o'], 
-                       'る': ['r', 'u'], 'れ': ['r', 'e'], 'ろ': ['r', 'o'], 'ゎ': ['w', 'a'], 'わ': ['w', 'a'], 
+        self.mora2jul={'ぁ': ['a'], 'あ': ['a'], 'ぃ': ['i'], 'い': ['i'], 'ぅ': ['u'], 'う': ['u'],
+                       'うぃ': ['w', 'i'], 'うぇ': ['w', 'e'], 'うぉ': ['w', 'o'], 'ぇ': ['e'],
+                       'え': ['e'], 'お': ['o'], 'か': ['k', 'a'], 'が': ['g', 'a'], 'き': ['k', 'i'],
+                       'きゃ': ['ky', 'a'], 'きゅ': ['ky', 'u'], 'きょ': ['ky', 'o'], 'ぎ': ['g', 'i'],
+                       'ぎゃ': ['gy', 'a'], 'ぎゅ': ['gy', 'u'], 'ぎょ': ['gy', 'o'], 'く': ['k', 'u'],
+                       'くぁ': ['k', 'u', 'a'], 'くぉ': ['k', 'u', 'o'], 'ぐ': ['g', 'u'], 'ぐぁ': ['g', 'u', 'a'],
+                       'け': ['k', 'e'], 'げ': ['g', 'e'], 'こ': ['k', 'o'], 'ご': ['g', 'o'], 'さ': ['s', 'a'],
+                       'ざ': ['z', 'a'], 'し': ['sh', 'i'], 'しぇ': ['sh', 'e'], 'しゃ': ['sh', 'a'],
+                       'しゅ': ['sh', 'u'], 'しょ': ['sh', 'o'], 'じ': ['j', 'i'], 'じぇ': ['j', 'e'],
+                       'じゃ': ['j', 'a'], 'じゅ': ['j', 'u'], 'じょ': ['j', 'o'], 'す': ['s', 'u'],
+                       'ず': ['z', 'u'], 'せ': ['s', 'e'], 'ぜ': ['z', 'e'], 'そ': ['s', 'o'], 'ぞ': ['z', 'o'],
+                       'た': ['t', 'a'], 'だ': ['d', 'a'], 'ち': ['ch', 'i'], 'ちぇ': ['ch', 'e'],
+                       'ちゃ': ['ch', 'a'], 'ちゅ': ['ch', 'u'], 'ちょ': ['ch', 'o'], 'ぢ': ['j', 'i'],
+                       'ぢゃ': ['j', 'a'], 'ぢょ': ['j', 'o'], 'っ': ['q'], 'つ': ['ts', 'u'], 'つぁ': ['ts', 'a'],
+                       'つぃ': ['ts', 'i'], 'つぇ': ['ts', 'e'], 'つぉ': ['ts', 'o'], 'づ': ['z', 'u'], 'て': ['t', 'e'],
+                       'てぃ': ['t', 'i'], 'で': ['d', 'e'], 'でぃ': ['d', 'i'], 'でゅ': ['dy', 'u'], 'と': ['t', 'o'],
+                       'ど': ['d', 'o'], 'な': ['n', 'a'], 'に': ['n', 'i'], 'にぇ': ['n', 'i', 'e'], 'にゃ': ['ny', 'a'],
+                       'にゅ': ['ny', 'u'], 'にょ': ['ny', 'o'], 'ぬ': ['n', 'u'], 'ね': ['n', 'e'], 'の': ['n', 'o'],
+                       'は': ['h', 'a'], 'ば': ['b', 'a'], 'ぱ': ['p', 'a'], 'ひ': ['h', 'i'], 'ひゃ': ['hy', 'a'],
+                       'ひゅ': ['hy', 'u'], 'ひょ': ['hy', 'o'], 'び': ['b', 'i'], 'びゃ': ['by', 'a'], 'びゅ': ['by', 'u'],
+                       'びょ': ['by', 'o'], 'ぴ': ['p', 'i'], 'ぴゃ': ['py', 'a'], 'ぴゅ': ['py', 'u'], 'ぴょ': ['py', 'o'],
+                       'ふ': ['f', 'u'], 'ふぁ': ['f', 'a'], 'ふぃ': ['f', 'i'], 'ふぇ': ['f', 'e'], 'ふぉ': ['f', 'o'],
+                       'ふゅ': ['hy', 'u'], 'ぶ': ['b', 'u'], 'ぷ': ['p', 'u'], 'へ': ['h', 'e'], 'べ': ['b', 'e'],
+                       'ぺ': ['p', 'e'], 'ほ': ['h', 'o'], 'ぼ': ['b', 'o'], 'ぽ': ['p', 'o'], 'ま': ['m', 'a'],
+                       'み': ['m', 'i'], 'みゃ': ['my', 'a'], 'みゅ': ['my', 'u'], 'みょ': ['my', 'o'], 'む': ['m', 'u'],
+                       'め': ['m', 'e'], 'も': ['m', 'o'], 'や': ['y', 'a'], 'ゆ': ['y', 'u'], 'よ': ['y', 'o'],
+                       'ら': ['r', 'a'], 'り': ['r', 'i'], 'りゃ': ['ry', 'a'], 'りゅ': ['ry', 'u'], 'りょ': ['ry', 'o'],
+                       'る': ['r', 'u'], 'れ': ['r', 'e'], 'ろ': ['r', 'o'], 'ゎ': ['w', 'a'], 'わ': ['w', 'a'],
                        'ゐ': ['i'], 'ゑ': ['e'], 'を': ['o'], 'ん': ['N'], 'ー':[':'],
                        # added at 2022_1017
                        'ずぃ':['z','i'], 'ぶぇ':['b','e'], 'ぶぃ':['b','i'], 'ぶぁ':['b','a'], 'ゅ':['y','u'],
@@ -251,7 +288,7 @@ class VOCAB():
         self.mora_p = {}
 
         # NTT 日本語語彙特性データから，`self.train_data` を作成
-        self.ntt_freq, self.ntt_orth2hira = self.make_ntt_freq_data()
+        self.ntt_freq, self.ntt_orth2hira = self.make_ntt_freq_data(ps71_fname=ps71_fname)
 
         # if test_name == 'TLPA':                      # TLPA データを読み込み
         #     self.test_name = test_name
@@ -289,7 +326,7 @@ class VOCAB():
                                  'mora': _mora1, 'mora_r': _mora1_r, 'mora_ids': _mora_ids, 'mora_p': _mora_p,
                                  'mora_p_r': _mora_p_r, 'mora_p_ids': _mora_p_ids, 'mora_p_ids_r': _mora_p_ids_r,
                                  #'semem':self.w2v[orth],
-                               }
+                                 }
             len_orth, len_phon, len_mora, len_mora_p = len(_orth), len(_phon), len(_mora), len(_mora_p)
             max_ortho_length = len_orth if len_orth > max_ortho_length else max_ortho_length
             max_phone_length = len_phon if len_phon > max_phone_length else max_phone_length
@@ -297,7 +334,7 @@ class VOCAB():
             max_mora_p_length = len_mora_p if len_mora_p > max_mora_p_length else max_mora_p_length
             if len(self.train_data) >= self.traindata_size: # 上限値に達したら終了する
                 self.train_vocab = [self.train_data[x]['orig'] for x in self.train_data]
-                break 
+                break
 
         self.max_ortho_length = max_ortho_length
         self.max_phone_length = max_phone_length
@@ -322,35 +359,35 @@ class VOCAB():
         _juls:list[str]: `yomi` を julius 変換した音素からなるリスト
         """
         _mora = self.moraWakachi(yomi) # 一旦モーラ単位の分かち書きを実行して `_mora` に格納
-    
+
         # 単語をモーラ反転した場合に長音「ー」の音が問題となるので，長音「ー」を母音で置き換えるためのプレースホルダとして. `_mora` を用いる
-        _mora1 = _mora.copy()     
+        _mora1 = _mora.copy()
 
         # その他のプレースホルダの初期化，モーラ，モーラ毎 ID, モーラ音素，モーラの音素の ID， モーラ音素の反転，モーラ音素の反転 ID リスト
         _mora_ids, _mora_p, _mora_p_ids, _mora_p_r, _mora_p_ids_r = [], [], [], [], []
         _m0 = 'ー' # 長音記号
-    
+
         for i, _m in enumerate(_mora): # 各モーラ単位の処理と登録
-        
+
             __m = _m0 if _m == 'ー' else _m               # 長音だったら，前音の母音を __m とし，それ以外は自分自身を __m に代入
             _mora1[i] = __m                               # 長音を変換した結果を格納
             _mora_ids.append(self.mora_vocab.index(__m))  # モーラを ID 番号に変換
             _mora_p += self.mora2jul[__m]                 # モーラを音素に変換して `_mora_p` に格納
-        
+
             # 変換した音素を音素 ID に変換して，`_mora_p_ids` に格納
-            _mora_p_ids += [self.mora_p_vocab.index(_p) for _p in self.mora2jul[__m]] 
-        
+            _mora_p_ids += [self.mora_p_vocab.index(_p) for _p in self.mora2jul[__m]]
+
             if not _m in self.mora_freq: # モーラの頻度表を集計
                 self.mora_freq[__m] = 1
             else:
                 self.mora_freq[__m] +=1
-            
+
             if self.hira2julius(__m)[-1] in self.vow2hira:           # 直前のモーラの最終音素が母音であれば
                 _m0 = self.vow2hira[self.hira2julius(__m)[-1]]  # 直前の母音を代入しておく。この処理が 2022_0311 でのポイントであった
 
         # モーラ分かち書きした単語 _mora1 の反転を作成し `_mora1_r` に格納
         _mora1_r = [m for m in _mora1[::-1]]
-    
+
         for _m in _mora1_r:                   # 反転した各モーラについて
             # モーラ単位で julius 変換して音素とし `_mora_p_r` に格納
             _mora_p_r += self.mora2jul[_m]
@@ -359,14 +396,15 @@ class VOCAB():
             _mora_p_ids_r += [self.mora_p_vocab.index(_p) for _p in self.mora2jul[_m]]
 
         _juls = self.hira2julius(yomi)
-        
+
         return yomi, _mora1, _mora1_r, _mora, _mora_ids, _mora_p, _mora_p_r, _mora_p_ids, _mora_p_ids_r, _juls
 
 
     def get6ids(self, _phon, _orth, yomi):
 
         # 音韻 ID リスト `phone_ids` に音素を登録する
-        phone_ids = [self.phone_vocab.index(p) for p in _phon]
+        phone_ids = [self.phone_vocab.index(p) if p in self.phone_vocab else self.phone_vocab.index('<UNK>') for p in _phon]
+        #phone_ids = [self.phone_vocab.index(p) for p in _phon]
 
         # 直上の音韻 ID リストの逆転を作成
         phone_ids_r = [p_id for p_id in phone_ids[::-1]]
@@ -383,9 +421,9 @@ class VOCAB():
 
         mora_ids = []
         for _p in self.hira2julius(yomi):
-            mora_ids.append(self.phone_vocab.index(_p))
+            mora_ids.append(self.phone_vocab.index(_p) if _p in self.phone_vocab else self.phone_vocab.index('<UNK>'))
 
-        mora_ids_r = []
+        mora_ids_r = [m_id for m_id in mora_ids]
         #print(f'yomi:{yomi}, self.moraWakati(yomi):{self.moraWakachi(jaconv.hira2kata(yomi))}')
         # for _p in self.moraWakachi(jaconv.hira2kata(yomi))[::-1]:
         #     for __p in  self.phone_vocab.index(self.hira2julius(jaconv.kata2hira(_p))):
@@ -450,8 +488,6 @@ class VOCAB():
 
         return _yomi, _phon, _phon_r, _orth, _orth_r, _mora, _mora_r
 
-
-
     def hira2julius(self, text:str)->str:
         """`jaconv.hiragana2julius()` では未対応の表記を扱う"""
         text = text.replace('ゔぁ', ' b a')
@@ -504,16 +540,22 @@ class VOCAB():
         return vocab
 
 
-    def make_ntt_freq_data(self):
+    def make_ntt_freq_data(self,
+                           ps71_fname:str=None):
+
         print('# NTT日本語語彙特性 (天野，近藤; 1999, 三省堂)より頻度情報を取得')
 
-        #データファイルの保存してあるディレクトリの指定
-        ntt_dir = 'ccap'
-        psy71_fname = 'psylex71utf8.txt'  # ファイル名
-        psy71_fname = 'psylex71utf8.txt.gz'  # ファイル名
-        #with gzip.open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
-        with gzip.open(os.path.join(ntt_dir,psy71_fname), 'rt', encoding='utf-8') as f:
-            ntt71raw = f.readlines()
+        if ps71_fname == None:
+            #データファイルの保存してあるディレクトリの指定
+            ntt_dir = 'ccap'
+            psy71_fname = 'psylex71utf8.txt'  # ファイル名
+            psy71_fname = 'psylex71utf8.txt.gz'  # ファイル名
+            #with gzip.open(os.path.join(ntt_dir,psy71_fname), 'r') as f:
+            with gzip.open(os.path.join(ntt_dir,psy71_fname), 'rt', encoding='utf-8') as f:
+                ntt71raw = f.readlines()
+        else:
+            with open(ps71_fname, 'r') as f:
+                ntt71raw = f.readlines()
 
         tmp = [line.split(' ')[:6] for line in ntt71raw]
         tmp2 = [[int(line[0]),line[2],line[4],int(line[5]), line[3]] for line in tmp]
@@ -521,7 +563,7 @@ class VOCAB():
 
         ntt_freq = {x[0]-1:{'単語':jaconv.normalize(x[1]),
                             '品詞':x[2],
-                            '頻度':x[3], 
+                            '頻度':x[3],
                             'よみ':jaconv.kata2hira(jaconv.normalize(x[4]))
                             } for x in tmp2}
         #ntt_freq = {x[0]-1:{'単語':x[1],'品詞':x[2],'頻度':x[3], 'よみ':x[4]} for x in tmp2}
@@ -593,31 +635,31 @@ def get_tlpa_naming_vocab(ntt_freq=None, ntt_orth2hira=None, w2v=None):
     #         max_idx = idx if idx > max_idx else max_idx
     #         __tlpa_words.append(w)
 
-    __tlpa_words = ['バス', '緑', '桜', 'のりまき', 'のり巻き', '海苔巻', '五重塔', 'コップ', 'ごぼう', '土踏ず', 
-    '土踏まず', '風呂', 'ヒトデ', 'ハム', 'うさぎ', '兎', 'ウサギ', 'ロープウェイ', '学校', 'ちりとり', 
-    '縁側', '歯', 'ねぎ', 'あじさい', '紫陽花', '灰色', '天井', '鍵', '肌色', 'ワニ', 
-    '鰐', '電車', '顔', '松', 'ガードレール', '柿', 'ちまき', '信号', 'ススキ', '薄', 'じょうろ', 'ジョウロ', 
-    'コンセント', '天ぷら', 'てんぷら', '中指', 'ヨット', 'ピンク', 'フクロウ', 'ふくろう', 'みかん', '蜜柑', 
-    'ミカン', '柱', '角砂糖', '犬', 'かご', '駕籠', 'バラ', '薔薇', '鍋', 'まぶた', 
-    'くるみ', '黒', 'デパート', 'カーネーション', '城', 'アリ', '豆腐', 'ドライバー', '紺', '階段', 
-    '戦車', '人参', '背中', '鏡餅', 'スプーン', '朝顔', '金色', '足', 'ふすま', 'へび', 
-    '蛇', 'ヘビ', 'レモン', '公園', '乳母車', '床', '藤', 'ピンセット', 'トラック', 'いちご', 
-    '苺', 'イチゴ', '黄土色', '銭湯', 'ナマズ', 'ソバ', '蕎麦', 'おなか', 'お腹', 'オレンジ', 
-    'バター', '工場', 'ハト', '鳩', '電卓', 'のど仏', '喉仏', 'チューリップ', '白菜', 'トラクター', 
-    '廊下', 'パトカー', '押し入れ', '鉛筆', '目尻', '芋', '吊橋', '赤', 'かき氷', '豹', 
-    'サボテン', 'ピラミッド', 'サイ', '目', 'ひまわり', 'はたき', 'さしみ', '刺身', '玄関', 'トマト', 
-    '黄緑', '三輪車', 'にわとり', '鶏', 'つむじ', 'アスパラガス', 'ドア', '銀色', 'すりこぎ', 'スリコギ', 
-    '擂粉木', 'ウイスキー', '梅', 'タクシー', '動物園', '床の間', 'こげ茶', 'ぶどう', '葡萄', 'ブドウ', '飴', 
-    '毛虫', 'アイロン', '寺', 'そり', 'ひょうたん', '首', '消しゴム', '頬', 'イチョウ', 'いちょう', 
-    '駅', '餃子', '牛', 'びわ', '枇杷', '飛行機', '畳', '白', '竹', 'ペリカン', 
-    '紫', '手すり', '手摺り', '口', '大根', '風車', 'ふうしゃ', '鋏', 'ハサミ', '潜水艦', 'ステーキ', 
-    'マッチ', '二階', '落花生', 'ごはん', 'ご飯', '自転車', '歩道橋', 'クジラ', '鯨', '茶色', 
-    'あやめ', 'ふくらはぎ', 'もも', '桃', '鯛焼き', 'タイ焼き', '道路', '靴べら', '靴ベラ', '水色', 
-    '壁', 'タンポポ', 'たんぽぽ', 'いかだ', 'ヤギ', '山羊', '鼻', 'エビ', '海老', '台所', 
-    'オートバイ', 'かぶ', '蕪', '柳', 'しゃもじ', 'まんじゅう', '饅頭', 'かかと', '薄紫', '家', 
-    'おせち料理', '青', '傘', 'つくし', 'リンゴ', '林檎', '馬車', '線路', '竜の落し子', 'タツノオトシゴ', 
+    __tlpa_words = ['バス', '緑', '桜', 'のりまき', 'のり巻き', '海苔巻', '五重塔', 'コップ', 'ごぼう', '土踏ず',
+    '土踏まず', '風呂', 'ヒトデ', 'ハム', 'うさぎ', '兎', 'ウサギ', 'ロープウェイ', '学校', 'ちりとり',
+    '縁側', '歯', 'ねぎ', 'あじさい', '紫陽花', '灰色', '天井', '鍵', '肌色', 'ワニ',
+    '鰐', '電車', '顔', '松', 'ガードレール', '柿', 'ちまき', '信号', 'ススキ', '薄', 'じょうろ', 'ジョウロ',
+    'コンセント', '天ぷら', 'てんぷら', '中指', 'ヨット', 'ピンク', 'フクロウ', 'ふくろう', 'みかん', '蜜柑',
+    'ミカン', '柱', '角砂糖', '犬', 'かご', '駕籠', 'バラ', '薔薇', '鍋', 'まぶた',
+    'くるみ', '黒', 'デパート', 'カーネーション', '城', 'アリ', '豆腐', 'ドライバー', '紺', '階段',
+    '戦車', '人参', '背中', '鏡餅', 'スプーン', '朝顔', '金色', '足', 'ふすま', 'へび',
+    '蛇', 'ヘビ', 'レモン', '公園', '乳母車', '床', '藤', 'ピンセット', 'トラック', 'いちご',
+    '苺', 'イチゴ', '黄土色', '銭湯', 'ナマズ', 'ソバ', '蕎麦', 'おなか', 'お腹', 'オレンジ',
+    'バター', '工場', 'ハト', '鳩', '電卓', 'のど仏', '喉仏', 'チューリップ', '白菜', 'トラクター',
+    '廊下', 'パトカー', '押し入れ', '鉛筆', '目尻', '芋', '吊橋', '赤', 'かき氷', '豹',
+    'サボテン', 'ピラミッド', 'サイ', '目', 'ひまわり', 'はたき', 'さしみ', '刺身', '玄関', 'トマト',
+    '黄緑', '三輪車', 'にわとり', '鶏', 'つむじ', 'アスパラガス', 'ドア', '銀色', 'すりこぎ', 'スリコギ',
+    '擂粉木', 'ウイスキー', '梅', 'タクシー', '動物園', '床の間', 'こげ茶', 'ぶどう', '葡萄', 'ブドウ', '飴',
+    '毛虫', 'アイロン', '寺', 'そり', 'ひょうたん', '首', '消しゴム', '頬', 'イチョウ', 'いちょう',
+    '駅', '餃子', '牛', 'びわ', '枇杷', '飛行機', '畳', '白', '竹', 'ペリカン',
+    '紫', '手すり', '手摺り', '口', '大根', '風車', 'ふうしゃ', '鋏', 'ハサミ', '潜水艦', 'ステーキ',
+    'マッチ', '二階', '落花生', 'ごはん', 'ご飯', '自転車', '歩道橋', 'クジラ', '鯨', '茶色',
+    'あやめ', 'ふくらはぎ', 'もも', '桃', '鯛焼き', 'タイ焼き', '道路', '靴べら', '靴ベラ', '水色',
+    '壁', 'タンポポ', 'たんぽぽ', 'いかだ', 'ヤギ', '山羊', '鼻', 'エビ', '海老', '台所',
+    'オートバイ', 'かぶ', '蕪', '柳', 'しゃもじ', 'まんじゅう', '饅頭', 'かかと', '薄紫', '家',
+    'おせち料理', '青', '傘', 'つくし', 'リンゴ', '林檎', '馬車', '線路', '竜の落し子', 'タツノオトシゴ',
     '耳', '便所', 'レンコン', '蓮根', '猫', '黄色', 'へそ', '街灯', '障子', '酒', '船', '安全ピン', 'もみじ']
-    
+
     return __tlpa_words
 
 def get_sala_naming_vocab(ntt_freq=None, ntt_orth2hira=None):
@@ -653,9 +695,9 @@ def get_sala_naming_vocab(ntt_freq=None, ntt_orth2hira=None):
             sala_vocab.append(yomi)
         else:
             sala_vocab.append(tag1)
-        
-        sala[len(sala)] = {'tag': tag1, 
-                        'code': _l[0], 
+
+        sala[len(sala)] = {'tag': tag1,
+                        'code': _l[0],
                         'feat': _l[1],
                         'yomi': yomi }
     return sala_vocab
@@ -674,7 +716,7 @@ def read_json_tlpa1234_sala_r29_30_31(json_fname='2022_0508SALA_TLPA.json'):
         print(f'The json file:{json_fname} does not exist')
         print(f'trying make a json file from csv files')
         data_dir = '..'                   # データの存在するディレクトリの指定
-        TLPA_fname = csv_fnames['TLPA']   # `失語症語彙検査 TLPA II III IV.pdf` をテキスト化した csv ファイル名
+        TLPA_fname = csv_fnadmes['TLPA']   # `失語症語彙検査 TLPA II III IV.pdf` をテキスト化した csv ファイル名
         SALA_fname = csv_fnames['SALA']   # `Rall.pdf` SALA の 29-32 までの csv ファイル名。ただし R31, R32 は未入力
 
         # 語彙判断検査データの読み込み
@@ -749,7 +791,7 @@ def read_json_tlpa1234_sala_r29_30_31(json_fname='2022_0508SALA_TLPA.json'):
     return TLPA1, TLPA2, TLPA3, TLPA4, SALA_R29, SALA_R30, SALA_R31
 
 
-#def _make_vocab_dataset(_dict:dict, 
+#def _make_vocab_dataset(_dict:dict,
 def make_vocab_dataset(_dict:dict, vocab:VOCAB=None)->dict:
     """上記 VOCAB を用いた下請け関数
     読み，音韻，モーラなどの情報を作成してデータセットといしての体裁を整える
@@ -763,14 +805,12 @@ def make_vocab_dataset(_dict:dict, vocab:VOCAB=None)->dict:
         orth = vocab.ntt_orth2hira[_x] if _x in vocab.ntt_orth2hira else _x
         _yomi, _phon, _phon_r, _orth, _orth_r, _mora, _mora_r = vocab.get7lists_from_orth(orth)
         phon_ids, phon_ids_r, orth_ids, orth_ids_r, mora_ids, mora_ids_r = vocab.get6ids(_phon, _orth, _yomi)
-        _yomi, _mora1, _mora1_r, _mora, _mora_ids, _mora_p, _mora_p_r, _mora_p_ids, _mora_p_ids_r, _juls = vocab.yomi2mora_transform(_yomi)    
-        _data[i] = {'orig': orth, 'yomi': _yomi, 'ortho':_orth, 'ortho_ids': orth_ids, 
-                    'ortho_r': _orth_r, 'ortho_ids_r': orth_ids_r, 
-                    'phone':_phon, 'phone_ids': phon_ids, 'phone_r': _phon_r, 'phone_ids_r': phon_ids_r, 
-                    'mora': _mora1, 'mora_r': _mora1_r, 'mora_ids': _mora_ids, 'mora_p': _mora_p, 
-                    'mora_p_r': _mora_p_r, 'mora_p_ids': _mora_p_ids, 'mora_p_ids_r': _mora_p_ids_r,
-                   }    
-
+        _yomi, _mora1, _mora1_r, _mora, _mora_ids, _mora_p, _mora_p_r, _mora_p_ids, _mora_p_ids_r, _juls = vocab.yomi2mora_transform(_yomi)
+        _data[i] = {'orig': orth, 'yomi': _yomi, 'ortho':_orth, 'ortho_ids': orth_ids,
+                    'ortho_r': _orth_r, 'ortho_ids_r': orth_ids_r,
+                    'phone':_phon, 'phone_ids': phon_ids, 'phone_r': _phon_r, 'phone_ids_r': phon_ids_r,
+                    'mora': _mora1, 'mora_r': _mora1_r, 'mora_ids': _mora_ids, 'mora_p': _mora_p,
+                    'mora_p_r': _mora_p_r, 'mora_p_ids': _mora_p_ids, 'mora_p_ids_r': _mora_p_ids_r, }
     return _data
 
 # import torch
@@ -778,14 +818,16 @@ def make_vocab_dataset(_dict:dict, vocab:VOCAB=None)->dict:
 class Train_dataset(torch.utils.data.Dataset):
 #class train_dataset(torch.utils.data.Dataset):
     """上で読み込んだ自作データ管理ライブラリ TLPA でも良いので冗長なのだが，訓練データセットと検証データセットとを明示的に定義"""
-    
+
     #def __init__(self, tlpa=tlpa)->None:
-    def __init__(self, 
+    def __init__(self,
                 data:VOCAB=None,
                 source_vocab:list=None,
                 target_vocab:list=None,
-                source_ids:str='mora_p_ids',                
-                target_ids:str='mora_p_ids_r',
+                source_ids:str=None,
+                target_ids:str=None,
+                # source_ids:str='mora_p_ids',
+                # target_ids:str='mora_p_ids_r',
                 ):
         #self.tlpa = tlpa
         #self.data = tlpa.train_data
@@ -798,20 +840,31 @@ class Train_dataset(torch.utils.data.Dataset):
 
         self.target_ids = target_ids
         self.source_ids = source_ids
+        self.source_vocab = source_vocab
 
-        self.source_vocab = source_vocab if source_vocab != None else VOCAB().mora_p_vocab
-        self.target_vocab = target_vocab if target_vocab != None else VOCAB().mora_p_vocab
+        #if source_vocab == None:
+        #    self.source_voab = VOCAB().mora_p_vocab
+        #else:
+        self.source_vocab = source_vocab
 
-        
+        #if target_vocab == None:
+        #    self.target_vocab = VOCAB().mora_p_vocab
+        #else:
+        self.target_vocab = target_vocab
+
+        # self.source_vocab = source_vocab if source_vocab != None else VOCAB().mora_p_vocab
+        # self.target_vocab = target_vocab if target_vocab != None else VOCAB().mora_p_vocab
+
+
     def __len__(self)->int:
         return len(self.data)
-    
+
     def __getitem__(self, x:int):
         return self.order[x][self.source_ids] + [self.source_vocab.index('<EOW>')], self.order[x][self.target_ids] + [self.target_vocab.index('<EOW>')]
-    
+
     def convert_source_ids_to_tokens(self, ids:list):
         return [self.source_vocab[idx] for idx in ids]
-    
+
     def convert_target_ids_to_tokens(self, ids:list):
         return [self.target_vocab[idx] for idx in ids]
 
@@ -826,8 +879,10 @@ class Val_dataset(torch.utils.data.Dataset):
                 data:dict=None,
                 source_vocab:list=None,
                 target_vocab:list=None,
-                source_ids:str='mora_p_ids',                
-                target_ids:str='mora_p_ids_r',
+                source_ids:str=None,
+                target_ids:str=None,
+                #source_ids:str='mora_p_ids',
+                #target_ids:str='mora_p_ids_r',
                 ):
 
         if 'pdata' in str(data.keys()):
@@ -843,16 +898,16 @@ class Val_dataset(torch.utils.data.Dataset):
         self.source_vocab = source_vocab if source_vocab != None else VOCAB().mora_p_vocab
         self.target_vocab = target_vocab if target_vocab != None else VOCAB().mora_p_vocab
 
-        
+
     def __len__(self)->int:
         return len(self.data)
-    
+
     def __getitem__(self, x:int):
         return self.order[x][self.source_ids] + [self.source_vocab.index('<EOW>')], self.order[x][self.target_ids] + [self.target_vocab.index('<EOW>')]
-    
+
     def convert_source_ids_to_tokens(self, ids:list):
         return [self.source_vocab[idx] for idx in ids]
-    
+
     def convert_target_ids_to_tokens(self, ids:list):
         return [self.target_vocab[idx] for idx in ids]
 
@@ -863,8 +918,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 class EncoderRNN(nn.Module):
     """RNNによる符号化器"""
-    def __init__(self, 
-            n_inp:int=0, 
+    def __init__(self,
+            n_inp:int=0,
             n_hid:int=0,
             device=None):
         super().__init__()
@@ -874,8 +929,8 @@ class EncoderRNN(nn.Module):
         self.embedding = nn.Embedding(n_inp, n_hid)
         self.gru = nn.GRU(n_hid, n_hid)
 
-    def forward(self, 
-                inp:int=0, 
+    def forward(self,
+                inp:int=0,
                 hid:int=0):
         embedded = self.embedding(inp).view(1, 1, -1)
         out = embedded
@@ -956,7 +1011,7 @@ def train(input_tensor, target_tensor,
 
     decoder_input = torch.tensor([[target_vocab.index('<SOW>')]], device=device)
     decoder_hidden = encoder_hidden
-    
+
 
     ok_flag = True
     # 教師強制をするか否かを確率的に決める
@@ -990,7 +1045,7 @@ def train(input_tensor, target_tensor,
     return loss.item() / target_length, ok_flag
 
 
-def tokenize(inp_word:str, 
+def tokenize(inp_word:str,
             _vocab:dict,
             max_length:int,
             pad:bool=False,
@@ -1005,29 +1060,33 @@ def tokenize(inp_word:str,
 
 
 def calc_accuracy(
-    _dataset, 
-    encoder, 
-    decoder, 
-    max_length=None, 
+    _dataset,
+    encoder,
+    decoder,
+    max_length=None,
     source_vocab=None,
     target_vocab=None,
+    source_ids=None,
+    target_ids=None,
     isPrint=False):
 
     ok_count = 0
     for i in range(_dataset.__len__()):
         _input_ids, _target_ids = _dataset.__getitem__(i)
         _output_words, _output_ids, _attentions = evaluate(
-            encoder=encoder, 
-            decoder=decoder, 
+            encoder=encoder,
+            decoder=decoder,
             input_ids=_input_ids,
             max_length=max_length,
             source_vocab=source_vocab,
             target_vocab=target_vocab,
+            source_ids=source_ids,
+            target_ids=target_ids,
         )
         ok_count += 1 if _target_ids == _output_ids else 0
         if (_target_ids != _output_ids) and (isPrint):
             print(i, _target_ids == _output_ids, _output_words, _input_ids, _target_ids)
-            
+
     return ok_count/_dataset.__len__()
 
 
@@ -1042,35 +1101,39 @@ def asMinutes(s:int)->str:
     return '%dm %ds' % (m, s)
 
 
-def timeSince(since:time.time, 
+def timeSince(since:time.time,
             percent:time.time)->str:
     """開始時刻 since と，現在の処理が全処理中に示す割合 percent を与えて，経過時間と残り時間を計算して表示する"""
     now = time.time()  #現在時刻を取得
     s = now - since    # 開始時刻から現在までの経過時間を計算
-    #s = since - now    
+    #s = since - now
     es = s / (percent) # 経過時間を現在までの処理割合で割って終了予想時間を計算
     rs = es - s        # 終了予想時刻から経過した時間を引いて残り時間を計算
 
     return f'経過時間:{asMinutes(s)} (残り時間 {asMinutes(rs)})'
 
 
-def check_vals_performance(encoder=None, decoder=None, 
-                           _dataset=None, 
-                           max_length=0, 
+def check_vals_performance(encoder=None, decoder=None,
+                           _dataset=None,
+                           max_length=0,
                            source_vocab=None,
                            target_vocab=None,
+                           source_ids=None,
+                           target_ids=None,
                            ):
     if _dataset == None or encoder == None or decoder == None or max_length == 0 or source_vocab == None:
         return
     print('検証データ:',end="")
     for _x in _dataset:
-        ok_count = 0 
+        ok_count = 0
         for i in range(_dataset[_x].__len__()):
             _input_ids, _target_ids = _dataset[_x].__getitem__(i)
-            _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids, 
-                                                               max_length, 
+            _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids,
+                                                               max_length,
                                                                source_vocab=source_vocab,
-                                                               target_vocab=target_vocab
+                                                               target_vocab=target_vocab,
+                                                               source_ids=source_ids,
+                                                               target_ids=target_ids,
                                                                )
             ok_count += 1 if _target_ids == _output_ids else 0
         print(f'{_x}:{ok_count/_dataset[_x].__len__():.3f},',end="")
@@ -1083,7 +1146,7 @@ import time
 # scikit learn の fit() 関数を模した感じである。
 # epochs を指定して，訓練を繰り返す。
 # 内部で `train()` を呼んでいる。
-def fit(encoder:nn.Module, decoder:nn.Module, 
+def fit(encoder:nn.Module, decoder:nn.Module,
         epochs:int=1,
         lr:float=0.001,
         n_sample:int=3,
@@ -1092,16 +1155,18 @@ def fit(encoder:nn.Module, decoder:nn.Module,
         val_dataset:dict=None,
         source_vocab:list=None,
         target_vocab:list=None,
+        source_ids=None,
+        target_ids=None,
         params:dict=None,
         max_length:int=1,
         device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
        )->list:
-    
+
     start_time = time.time()
-    
+
     encoder.train()
     decoder.train()
-    
+
     #nprint(f'params:{params}')
     #print(f'params["optim_func"]:{params["optim_func"]}')
     encoder_optimizer = params['optim_func'](encoder.parameters(), lr=lr)
@@ -1111,22 +1176,22 @@ def fit(encoder:nn.Module, decoder:nn.Module,
 
     for epoch in range(epochs):
         epoch_loss = 0
-        
+
         ok_count = 0
         #エポックごとに学習順をシャッフルする
         learning_order = np.random.permutation(train_dataset.__len__())
         for i in range(train_dataset.__len__()):
-            x = learning_order[i]   # ランダムにデータを取り出す 
+            x = learning_order[i]   # ランダムにデータを取り出す
             input_ids, target_ids = train_dataset.__getitem__(x)
             input_tensor = convert_ids2tensor(input_ids)
             target_tensor = convert_ids2tensor(target_ids)
-            
+
             #訓練の実施
-            loss, ok_flag = train(input_tensor, target_tensor, 
-            #loss, ok_flag = lam.train(input_tensor, target_tensor, 
-                                  encoder, decoder, 
-                                  encoder_optimizer, decoder_optimizer, 
-                                  criterion, 
+            loss, ok_flag = train(input_tensor, target_tensor,
+            #loss, ok_flag = lam.train(input_tensor, target_tensor,
+                                  encoder, decoder,
+                                  encoder_optimizer, decoder_optimizer,
+                                  criterion,
                                   max_length=max_length,
                                   #max_length=_vocab.max_length,
                                   target_vocab=target_vocab,
@@ -1134,34 +1199,39 @@ def fit(encoder:nn.Module, decoder:nn.Module,
                                   device=device)
             epoch_loss += loss
             ok_count += 1 if ok_flag else 0
-        
+
         losses.append(epoch_loss/train_dataset.__len__())
         print(colored(f'エポック:{epoch:2d} 損失:{epoch_loss/train_dataset.__len__():.2f}', 'blue', attrs=['bold']),
-              colored(f'{timeSince(start_time, (epoch+1) * train_dataset.__len__()/(epochs * train_dataset.__len__()))}', 
+              colored(f'{timeSince(start_time, (epoch+1) * train_dataset.__len__()/(epochs * train_dataset.__len__()))}',
                       'cyan', attrs=['bold']),
               colored(f'訓練データの精度:{ok_count/train_dataset.__len__():.3f}', 'blue', attrs=['bold']))
 
-        check_vals_performance(_dataset=val_dataset, 
-        #lam.check_vals_performance(_dataset=val_dataset, 
-                                   encoder=encoder, 
-                                   decoder=decoder, 
+        check_vals_performance(_dataset=val_dataset,
+        #lam.check_vals_performance(_dataset=val_dataset,
+                                   encoder=encoder,
+                                   decoder=decoder,
                                    max_length=max_length,
                                    #max_length=_vocab.max_length,
                                    source_vocab=source_vocab,
-                                   target_vocab=target_vocab)
+                                   target_vocab=target_vocab,
+                                   source_ids=source_ids,
+                                   target_ids=target_ids,
+                                   )
         if n_sample > 0:
             evaluateRandomly(encoder, decoder, n=n_sample)
-        
+
     return losses
 
 
-def evaluate(encoder:nn.Module, 
-             decoder:nn.Module, 
+def evaluate(encoder:nn.Module,
+             decoder:nn.Module,
              input_ids,
              max_length,
              #max_length:int=_vocab.max_length,
              source_vocab,
              target_vocab,
+             source_ids,
+             target_ids,
             )->(list,torch.LongTensor):
     with torch.no_grad():
         input_tensor = convert_ids2tensor(input_ids)
@@ -1195,13 +1265,13 @@ def evaluate(encoder:nn.Module,
             decoder_input = topi.squeeze().detach()
 
         return decoded_words, decoded_ids, decoder_attentions[:di + 1]  # decoded_ids を返すように変更
-        #return decoded_words, decoder_attentions[:di + 1]    
+        #return decoded_words, decoder_attentions[:di + 1]
 
-def evaluateRandomly(encoder:nn.Module, 
-                     decoder:nn.Module, 
+def evaluateRandomly(encoder:nn.Module,
+                     decoder:nn.Module,
                      val_dataset=None,
                      n:int=5)->float:
-    
+
     srcs, preds = [], []
     for x in np.random.randint(val_dataset.__len__(), size=n):
         input_ids, target_ids = val_dataset.__getitem__(x)
@@ -1215,10 +1285,10 @@ def evaluateRandomly(encoder:nn.Module,
         print('---')
     return srcs, preds
 
-def _evaluateRandomly(encoder:nn.Module, 
-                     decoder:nn.Module, 
+def _evaluateRandomly(encoder:nn.Module,
+                     decoder:nn.Module,
                      n:int=5)->float:
-    
+
     srcs, preds = [], []
     for x in np.random.randint(val_dataset.__len__(), size=n):
         input_ids, target_ids = val_dataset.__getitem__(x)
@@ -1278,7 +1348,7 @@ def draw_sala_decay_results(sala_result:dict,
     plt.title(title)
     plt.legend()
     if len(save_fname) > 0:
-        fig.savefig(save_fname, dpi=100) 
+        fig.savefig(save_fname, dpi=100)
 
 
 def calc_val_tlpa(encoder,
@@ -1289,13 +1359,13 @@ def calc_val_tlpa(encoder,
                   target_vocab,
                   max_length,
                   isPrint):
-    n_hit = 0 
+    n_hit = 0
     n_word, c_word, n_non_word, c_non_word = 0, 0, 0, 0
     for i in range(_data.__len__()):
         _input_ids, _target_ids = _data.__getitem__(i)
-        _output_words, _output_ids, _attentions = evaluate(encoder, decoder, 
-        #_output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, 
-                                                               _input_ids, max_length=max_length, 
+        _output_words, _output_ids, _attentions = evaluate(encoder, decoder,
+        #_output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder,
+                                                               _input_ids, max_length=max_length,
                                                                source_vocab=source_vocab,
                                                                target_vocab=target_vocab)
         _hit = _target_ids == _output_ids
@@ -1303,7 +1373,7 @@ def calc_val_tlpa(encoder,
         #_cond_NW = len(_cond[f'{i+1:02d}'][1]) > 0
         if _hit:
             if _cond_NW:
-                n_non_word += 1 
+                n_non_word += 1
             else:
                 n_word += 1
         if _cond_NW:
@@ -1312,13 +1382,13 @@ def calc_val_tlpa(encoder,
             c_non_word += 1
 
         n_hit += 1 if _hit else 0
-        
+
     if not isPrint:
-        return {'単語': n_word/c_word, '非単語': n_non_word/c_non_word } 
+        return {'単語': n_word/c_word, '非単語': n_non_word/c_non_word }
     else:
         print(f'単語:{n_word / c_word:.3f}',
               f'非単語:{n_non_word / c_non_word:.3f}')
-        
+
 
 def calc_val_tlpas(encoder,
                    decoder,
@@ -1328,7 +1398,7 @@ def calc_val_tlpas(encoder,
                    _dataset,
                    X_vals,
                    isPrint):
-    
+
     ret_dict = {'tlpa2':{}, 'tlpa3':{}, 'tlpa4':{}}
 
     ret_dict['tlpa2'] = calc_val_tlpa(encoder=encoder, decoder=decoder,
@@ -1352,7 +1422,7 @@ def calc_val_tlpas(encoder,
 
     # for _d in ret_dict.keys():
     #     if isPrint: print(f'{_d}', end=' ')
-    #     ret_dict[_d] = calc_val_tlpa(encoder=encoder, decoder=decoder, 
+    #     ret_dict[_d] = calc_val_tlpa(encoder=encoder, decoder=decoder,
     #                                  _data=eval(_d+'val'), cond=_dataset[_d],
     #                                  source_vocab=source_vocab, target_vocab=target_vocab,
     #                                  max_length=max_length, isPrint=isPrint)
@@ -1373,8 +1443,8 @@ def calc_val_tlpas(encoder,
 #     total = {'HH':0, 'HL':0, 'LH':0, 'LL':0}
 #     for i in range(_data.__len__()):
 #         _input_ids, _target_ids = _data.__getitem__(i)
-#         _output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, 
-#                                                                _input_ids, max_length=max_length, 
+#         _output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder,
+#                                                                _input_ids, max_length=max_length,
 #                                                                source_vocab=source_vocab,
 #                                                                target_vocab=target_vocab)
 #         _cond = cond[str(f'{i+1:02d}')][1]
@@ -1384,7 +1454,7 @@ def calc_val_tlpas(encoder,
 #         elif _cond == '0001': __cond = 'LL'
 #         if _target_ids == _output_ids: hits[__cond] += 1
 #         total[__cond] += 1
-            
+
 #     return hits, total
 
 
@@ -1399,12 +1469,12 @@ def calc_val_sala_r29(encoder:nn.Module=None,
     ret_conds = {'HH':{}, 'HL':{}, 'LH':{}, 'LL':{}}
     hits  = {'HH':0, 'HL':0, 'LH':0, 'LL':0}
     total = {'HH':0, 'HL':0, 'LH':0, 'LL':0}
-    
+
     #print(f'cond["rawdata"]:{cond["rawdata"]}')
     #return
     for i in range(_data.__len__()):
         _input_ids, _target_ids = _data.__getitem__(i)
-        _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids, max_length=max_length, 
+        _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids, max_length=max_length,
                                                                source_vocab=source_vocab, target_vocab=target_vocab)
 
         num = str(f'{i+1:02d}')
@@ -1420,7 +1490,7 @@ def calc_val_sala_r29(encoder:nn.Module=None,
 
     for _ret_cond in ret_conds.keys():
         ret_conds[_ret_cond] = hits[_ret_cond]/total[_ret_cond]
-    return ret_conds    
+    return ret_conds
     #return hits, total
 
 
@@ -1430,20 +1500,20 @@ def calc_val_sala_r30(encoder:nn.Module=None,
                       #_cond:dict=None,
                       source_vocab:dict=None,
                       target_vocab:dict=None,
-                      cond:dict=None, 
+                      cond:dict=None,
                       max_length:int=1):
-    
-    ret_conds  = {'hira2':{}, 'hira3':{}, 'hira4':{}, 
-                  'kata2':{}, 'kata3':{}, 'kata4':{}, 
+
+    ret_conds  = {'hira2':{}, 'hira3':{}, 'hira4':{},
+                  'kata2':{}, 'kata3':{}, 'kata4':{},
                   'kanj2':{}, 'kanj3':{}, 'kanj4':{}}
     hits  = {'hira2':0, 'hira3':0, 'hira4':0, 'kata2':0, 'kata3':0, 'kata4':0, 'kanj2':0, 'kanj3':0, 'kanj4':0}
     total = {'hira2':0, 'hira3':0, 'hira4':0, 'kata2':0, 'kata3':0, 'kata4':0, 'kanj2':0, 'kanj3':0, 'kanj4':0}
     for i in range(_data.__len__()):
         _input_ids, _target_ids = _data.__getitem__(i)
-        _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids, max_length=max_length, 
-        #_output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length, 
+        _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids, max_length=max_length,
+        #_output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length,
                                                                source_vocab=source_vocab, target_vocab=target_vocab)
-        
+
         num = str(f'{i+1:02d}')
         #_stim = cond['rawdata'][num][-2:]
         _cond_moji = cond['rawdata'][num][1]
@@ -1455,7 +1525,7 @@ def calc_val_sala_r30(encoder:nn.Module=None,
 
     for _ret_cond in ret_conds.keys():
         ret_conds[_ret_cond] = hits[_ret_cond]/total[_ret_cond]
-    return ret_conds    
+    return ret_conds
     #return hits, total
 
 # def _calc_val_sala_r30(encoder:nn.Module=None,
@@ -1466,14 +1536,14 @@ def calc_val_sala_r30(encoder:nn.Module=None,
 #                       target_vocab:dict=None,
 #                       cond:dict=None,
 #                       max_length:int=1):
-    
+
 #     hits  = {'hira2':0, 'hira3':0, 'hira4':0, 'kata2':0, 'kata3':0, 'kata4':0, 'kanj2':0, 'kanj3':0, 'kanj4':0}
 #     total = {'hira2':0, 'hira3':0, 'hira4':0, 'kata2':0, 'kata3':0, 'kata4':0, 'kanj2':0, 'kanj3':0, 'kanj4':0}
 #     for i in range(_data.__len__()):
 #         _input_ids, _target_ids = _data.__getitem__(i)
-#         _output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length, 
+#         _output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length,
 #                                                                source_vocab=source_vocab, target_vocab=target_vocab)
-        
+
 #         num = str(f'{i+1:02d}')
 #         _stim = cond[num][0]
 #         _cond_moji = cond[num][1]
@@ -1482,7 +1552,7 @@ def calc_val_sala_r30(encoder:nn.Module=None,
 #         _hit = _target_ids == _output_ids
 #         if _hit: hits[__cond] += 1
 #         total[__cond] += 1
-        
+
 #     return hits, total
 
 def calc_val_sala_r31(encoder:nn.Module=None,
@@ -1491,46 +1561,55 @@ def calc_val_sala_r31(encoder:nn.Module=None,
                       _cond:dict=None,
                       source_vocab:dict=None,
                       target_vocab:dict=None,
+                      source_ids=None,
+                      target_ids=None,
                       cond:dict=None,
                       max_length:int=1):
-    
+
     hits  = {'2':0, '3':0, '4':0, '5':0}
     total  = {'2':0, '3':0, '4':0, '5':0}
     ret_conds  = {'2':{}, '3':{}, '4':{}}
-    
+
     for i in range(_data.__len__()):
         _input_ids, _target_ids = _data.__getitem__(i)
-        _output_words, _output_ids, _attentions = evaluate(encoder, decoder, _input_ids, max_length=max_length, 
-        #_output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length, 
-                                                               source_vocab=source_vocab, target_vocab=target_vocab)
-        
+        _output_words, _output_ids, _attentions = evaluate(encoder,
+                                                           decoder,
+                                                           _input_ids,
+                                                           max_length=max_length,
+        #_output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length,
+                                                           source_vocab=source_vocab,
+                                                           target_vocab=target_vocab,
+                                                           source_ids=source_ids,
+                                                           target_ids=target_ids,
+                                                           )
+
         num = str(f'{i+1:02d}')
         __cond = cond['rawdata'][num][1]
         _hit = _target_ids == _output_ids
         if _hit: hits[__cond] += 1
         total[__cond] += 1
-        
+
     for _ret_cond in ret_conds.keys():
         ret_conds[_ret_cond] = hits[_ret_cond]/total[_ret_cond]
-    return ret_conds    
+    return ret_conds
     #return hits, total
 
 # def _calc_val_sala_r31(encoder:nn.Module=None,
 #                        decoder:nn.Module=None,
 #                       _data:dict=None,
 #                       _cond:dict=None,
-#                       source_vocab:dict=None, 
+#                       source_vocab:dict=None,
 #                       target_vocab:dict=None,
 #                       cond:dict=None,
 #                       max_length:int=1):
-    
+
 #     hits  = {'2':0, '3':0, '4':0, '5':0}
 #     total  = {'2':0, '3':0, '4':0, '5':0}
 #     for i in range(_data.__len__()):
 #         _input_ids, _target_ids = _data.__getitem__(i)
-#         _output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length, 
+#         _output_words, _output_ids, _attentions = lam.evaluate(encoder, decoder, _input_ids, max_length=max_length,
 #                                                                source_vocab=source_vocab, target_vocab=target_vocab)
-        
+
 #         num = str(f'{i+1:02d}')
 #         __cond = cond[num][1]
 #         _hit = _target_ids == _output_ids
@@ -1547,35 +1626,35 @@ def calc_val_salas(encoder:nn.Module=None,
                    X_vals:dict=None,
                    _dataset:dict=None,
                    isPrint=False):
-    
+
     ret_results = {'sala_r29':{}, 'sala_r30':{}, 'sala_r31':{}}
-    
-    __x            = calc_val_sala_r29(encoder=encoder, decoder=decoder, 
-                                       source_vocab=source_vocab, target_vocab=target_vocab, 
+
+    __x            = calc_val_sala_r29(encoder=encoder, decoder=decoder,
+                                       source_vocab=source_vocab, target_vocab=target_vocab,
                                        _data=X_vals['sala_r29val'],
                                        #_data=X_vals['SALA_R29'],
                                        cond=_dataset['sala_r29'], #['Cond'],
-                                       max_length=max_length)    
-    #_hits, _total = _calc_val_sala_r29(encoder=encoder, decoder=decoder, 
-    #                                   source_vocab=source_vocab, target_vocab=target_vocab, 
+                                       max_length=max_length)
+    #_hits, _total = _calc_val_sala_r29(encoder=encoder, decoder=decoder,
+    #                                   source_vocab=source_vocab, target_vocab=target_vocab,
     #                                   max_length=_vocab.max_length)
     ret_results['sala_r29'] = __x
     #ret_results['sala_r29'] = {'_hits':_hits, '_total':_total}
-    if isPrint: 
+    if isPrint:
         print('sala_r29', end=" ")
         print(__x)
         # for h,t in zip(_hits,_total):
         #     print(f'{h}:{_hits[h]/_total[t]:.3f}', end=" ")
         # print()
 
-    __x            = calc_val_sala_r30(encoder=encoder,decoder=decoder, 
-                                       source_vocab=source_vocab, target_vocab=target_vocab, 
+    __x            = calc_val_sala_r30(encoder=encoder,decoder=decoder,
+                                       source_vocab=source_vocab, target_vocab=target_vocab,
                                        _data=X_vals['sala_r30val'],
                                        #_data=X_vals['SALA_R30'],
                                        cond=_dataset['sala_r30'], #['Cond'],
                                        max_length=max_length)
-    #_hits, _total = calc_val_sala_r30(encoder=encoder,decoder=decoder, 
-    #                                  source_vocab=source_vocab, target_vocab=target_vocab, 
+    #_hits, _total = calc_val_sala_r30(encoder=encoder,decoder=decoder,
+    #                                  source_vocab=source_vocab, target_vocab=target_vocab,
     #                                  max_length=_vocab.max_length)
 
     ret_results['sala_r30'] = __x
@@ -1586,13 +1665,13 @@ def calc_val_salas(encoder:nn.Module=None,
             print(f'{h}:{_hits[h]/_total[t]:.3f}', end=" ")
         print()
 
-    __x            = calc_val_sala_r31(encoder=encoder,decoder=decoder, source_vocab=source_vocab, 
+    __x            = calc_val_sala_r31(encoder=encoder,decoder=decoder, source_vocab=source_vocab,
                                        target_vocab=target_vocab, max_length=max_length,
                                        _data=X_vals['sala_r31val'],
                                        #_data=X_vals['SALA_R31'],
                                        cond=_dataset['sala_r31'], #['Cond'],
                                        )
-    #_hits, _total = calc_val_sala_r31(encoder=encoder,decoder=decoder, source_vocab=source_vocab, 
+    #_hits, _total = calc_val_sala_r31(encoder=encoder,decoder=decoder, source_vocab=source_vocab,
     #                                  target_vocab=target_vocab, max_length=_vocab.max_length)
     ret_results['sala_r31'] = __x
     #ret_results['sala_r31'] = {'_hits':_hits, '_total':_total}
@@ -1610,14 +1689,14 @@ def get_soure_and_target_from_params(params=None,
                                     _vocab=None,
                                     source=None,
                                     target=None,
-                                     is_print:bool=True):
+                                    is_print:bool=True):
     #source = params['source']
     #target = params['target']
 
-    if source == 'orthography':
+    if source == 'orth':
         source_vocab = _vocab.ortho_vocab
-        source_ids = 'orth_ids'
-    elif source == 'phonology':
+        source_ids = 'ortho_ids'
+    elif source == 'phon':
         source_vocab = _vocab.phone_vocab
         source_ids = 'phone_ids'
     elif source == 'mora':
@@ -1630,11 +1709,11 @@ def get_soure_and_target_from_params(params=None,
         source_vocab = _vocab.mora_p_vocab
         source_ids = 'mora_p_ids_r'
 
-    
-    if target == 'orthography':
+
+    if target == 'orth':
         target_vocab = _vocab.ortho_vocab
         target_ids = 'ortho_ids'
-    elif target == 'phonology':
+    elif target == 'phon':
         target_vocab = _vocab.phone_vocab
         target_ids = 'phone_ids'
     elif target == 'mora':
@@ -1646,7 +1725,7 @@ def get_soure_and_target_from_params(params=None,
     elif target == 'mora_p_r':
         target_vocab = _vocab.mora_p_vocab
         target_ids = 'mora_p_ids_r'
-    
+
 
     if is_print:
         print(colored(f'source:{source}','blue', attrs=['bold']), f'{source_vocab}')
@@ -1675,6 +1754,8 @@ def worker_init_fn(worker_id):
 def make_X_vals(_dataset=None,
                 source_vocab=None,
                 target_vocab=None,
+                source_ids=None,
+                target_ids=None,
                 ):
 
     if _dataset == None:
@@ -1682,28 +1763,46 @@ def make_X_vals(_dataset=None,
         sys.exit()
 
     sala_r29val = Val_dataset(data=_dataset['sala_r29'],
-                            source_vocab=source_vocab, 
-                            target_vocab=target_vocab)
+                            source_vocab=source_vocab,
+                            target_vocab=target_vocab,
+                            source_ids=source_ids,
+                            target_ids=target_ids,
+                            )
 
     sala_r30val = Val_dataset(data=_dataset['sala_r30'],
-                            source_vocab=source_vocab, 
-                            target_vocab=target_vocab)
+                            source_vocab=source_vocab,
+                            target_vocab=target_vocab,
+                            source_ids=source_ids,
+                            target_ids=target_ids,
+                            )
 
     sala_r31val = Val_dataset(data=_dataset['sala_r31'],
-                            source_vocab=source_vocab, 
-                            target_vocab=target_vocab)
+                            source_vocab=source_vocab,
+                            target_vocab=target_vocab,
+                            source_ids=source_ids,
+                            target_ids=target_ids,
+                            )
 
     tlpa2val    = Val_dataset(data=_dataset['tlpa2'],
-                            source_vocab=source_vocab, 
-                            target_vocab=target_vocab)
+                            source_vocab=source_vocab,
+                            target_vocab=target_vocab,
+                            source_ids=source_ids,
+                            target_ids=target_ids,
+                            )
 
     tlpa3val    = Val_dataset(data=_dataset['tlpa3'],
-                            source_vocab=source_vocab, 
-                            target_vocab=target_vocab)
+                            source_vocab=source_vocab,
+                            target_vocab=target_vocab,
+                            source_ids=source_ids,
+                            target_ids=target_ids,
+                            )
 
     tlpa4val    = Val_dataset(data=_dataset['tlpa4'],
-                            source_vocab=source_vocab, 
-                            target_vocab=target_vocab)
+                            source_vocab=source_vocab,
+                            target_vocab=target_vocab,
+                            source_ids=source_ids,
+                            target_ids=target_ids,
+                            )
 
     X_vals = { 'SALA_R29': sala_r29val,'SALA_R30': sala_r30val,'SALA_R31': sala_r31val,
                 'TLPA2': tlpa2val,'TLPA3': tlpa3val,'TLPA4': tlpa4val}
